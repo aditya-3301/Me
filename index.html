@@ -1185,11 +1185,18 @@
   // (the wordmark morph above grows/shrinks the nav width while scrubbing), so
   // scrolling down then back up left the pill parked at a stale x/width, visibly
   // misaligned/overlapping the wrong link - exactly the reported glitch.
-  ['projects','experience'].forEach((id, idx)=>{
+  // Projects: highlight when its top crosses 40% down the viewport (unchanged).
+  // Experience: only highlight once its top reaches 15% — prevents the "About Me"
+  // pill activating while the user is still reading the Projects rail.
+  const scrollspyDefs = [
+    { id: 'projects',   start: 'top 40%', end: 'bottom 40%', idx: 0 },
+    { id: 'experience', start: 'top 15%', end: 'bottom 40%', idx: 1 }
+  ];
+  scrollspyDefs.forEach(({ id, start, end, idx }) => {
     const section = document.getElementById(id);
     if (!section) return;
     ScrollTrigger.create({
-      trigger: section, start:'top 40%', end:'bottom 40%',
+      trigger: section, start, end,
       onEnter: ()=> moveIndicator(navLinks[id]),
       onEnterBack: ()=> moveIndicator(navLinks[id]),
       onLeaveBack: ()=> { if (idx === 0) hideIndicator(); }

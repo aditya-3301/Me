@@ -111,7 +111,8 @@
     gap:0.3em; max-width:100%;
   }
   .hero h1 em{ font-style:italic; font-weight:500; color:var(--moss); }
-  .letters{ display:inline-flex; flex-wrap:nowrap; flex-shrink:0; }
+  .letters{ display:inline-flex; flex-wrap:nowrap; flex-shrink:0; letter-spacing:0; transition:letter-spacing .5s ease; }
+  .letters:hover{ letter-spacing:0.05em; }
   .letters .letter{ display:inline-block; transition:color .3s ease, transform .3s ease; cursor:pointer; }
   .letter-particle{ position:fixed; width:5px; height:5px; border-radius:50%; pointer-events:none; z-index:9999; transform:translate(-50%,-50%); }
   .letters .letter:hover{ color:var(--hc); transform:translateY(-0.08em) rotate(-3deg); }
@@ -1274,7 +1275,7 @@
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
       const bits = [];
-      const PARTICLE_COUNT = 10;
+      const PARTICLE_COUNT = 40;
 
       for (let i = 0; i < PARTICLE_COUNT; i++) {
         const bit = document.createElement('span');

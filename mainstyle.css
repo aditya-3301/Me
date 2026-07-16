@@ -112,8 +112,13 @@
     display:inline-block; white-space:nowrap; word-break:keep-all;
     content:"Shankar";
     animation:lang-cycle 24s linear infinite;
+    animation-delay: var(--lang-delay, 0s);
     font-family:'Noto Sans Devanagari', 'Newsreader', serif;
   }
+  /* JS toggles this for one frame to force a reflow, so the animation
+     restarts clean at the new --lang-delay instead of blending from
+     wherever the 24s loop currently sits. */
+  .lang-cycle.lang-reset::after{ animation:none; }
   /* content is a discrete (non-interpolable) property. If it's only declared at the
      boundary keyframes (0/20/40/60%...), the browser is free to flip it at the
      midpoint between those declarations - which lands mid-hold, at full opacity,

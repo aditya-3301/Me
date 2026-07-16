@@ -645,6 +645,23 @@
   // touch that animation at all, just hide the real element and mask the
   // click behind a burst of particles for a beat, then bring it back.
   const surname = document.querySelector('.lang-cycle');
+  const LANG_WORDS = ['Shankar', 'Шанкар', 'シャンカル', '샹카르', 'शंकर'];
+  const LANG_BLOCK = 24 / LANG_WORDS.length; // seconds per language in the CSS loop
+  const LANG_HOLD  = 0.11 * 24;              // lands mid-hold (9%-13%), fully visible
+
+  // Jumps the CSS-driven ::after straight to the next language's held frame,
+  // instead of waiting on wherever the 24s loop naturally is.
+  function jumpToNextLanguage(el){
+    const current = getComputedStyle(el, '::after').content.replace(/"/g, '');
+    const idx = LANG_WORDS.indexOf(current);
+    const next = ((idx === -1 ? 0 : idx) + 1) % LANG_WORDS.length;
+    const delay = -(next * LANG_BLOCK + LANG_HOLD);
+    el.classList.add('lang-reset');
+    void el.offsetWidth; // force reflow so the animation actually restarts
+    el.style.setProperty('--lang-delay', delay + 's');
+    el.classList.remove('lang-reset');
+  }
+
   if (surname) {
     let surnameBusy = false;
     surname.addEventListener('click', () => {
@@ -682,7 +699,7 @@
 
       gsap.to(surname, {
         opacity: 1, delay: .5, duration: 0.4, ease: 'power2.out',   
-        onStart: () => gsap.fromTo(surname, { scale: 0.6 }, { scale: 1, duration: 0.4, ease: 'back.out(2)' }),
+        onStart: () => { jumpToNextLanguage(surname); gsap.fromTo(surname, { scale: 0.6 }, { scale: 1, duration: 0.4, ease: 'back.out(2)' }); },
         onComplete: () => { bits.forEach(b => b.remove()); surnameBusy = false; }
       });
     });

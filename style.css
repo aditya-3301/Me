@@ -1,0 +1,458 @@
+:root{
+    /* Core ink: warm parchment. ink-muted is intentionally dimmer (lower L). */
+    --ink: #EDE6D6;
+    --ink-dim: #B8B0A0;
+    --ink-faint: rgba(237,230,214,0.45);
+    --bg: #141210;
+    --bg-raised: #1C1916;
+    --bg-surface: rgba(255,255,255,0.04);
+    /* Palette — restrained use: moss is the signature colour */
+    --moss: #8A9A5B;
+    --moss-dim: rgba(138,154,91,0.18);
+    --rust: #C1502E;
+    --amber: #C8973E;
+    --teal: #4C8C86;
+    --clay: #B5654A;
+    --sage: #9CAF88;
+    --line: rgba(237,230,214,0.11);
+    --line-strong: rgba(237,230,214,0.20);
+
+    --nav-blur: 20px;
+    --nav-sat: 180%;
+    --nav-pad-v: 4px;
+    --nav-pad-h: 6px;
+    --nav-bg-1-a: 0.10;
+    --nav-bg-2-a: 0.03;
+  }
+  /* Section-based accent theming: shifts only --rust (used by section-num,
+     eyebrow, selection color, active-nav-pill contrast) as you scroll between
+     sections. Deliberately narrow in scope - --bg/--ink stay untouched so
+     contrast/readability elsewhere on the page can't be affected. Custom-property
+     transitions on non-numeric/color-typed vars aren't reliably animatable across
+     browsers without @property, so the shift is intentionally an instant swap
+     rather than a tween - still reads as a mood change since it's tied to scroll.*/
+  body.theme-projects{ --rust:#C1502E; }
+  body.theme-experience{ --rust:#B5654A; }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Work Sans', sans-serif;
+    overflow-x:hidden;
+  }
+  ::selection{ background:var(--rust); color:var(--bg); }
+
+  /* header */
+  header{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:24px 5vw; font-family:'JetBrains Mono', monospace; font-size:12px;
+    color:var(--ink-dim); letter-spacing:0.03em;
+    border-bottom: 1px solid var(--line);
+  }
+  /* Scrollspy pill: a moss-colored slider that slides behind whichever nav link
+     ("Projects" / "About Me") is currently in view. Lives inside the real nav
+     markup (the <nav data-app-nav> block further down) as an absolutely
+     positioned <span class="nav-indicator">, and is driven by moveIndicator()
+     in the script at the bottom of the page. */
+  .nav-indicator{
+    position:absolute; height:32px; border-radius:999px;
+    background:var(--moss); opacity:0; z-index:0; top:4px; left:0;
+    pointer-events:none;
+  }
+  /* Text goes dark-on-moss when a link's pill is active. The link text itself
+     lives in a nested <span> with its own hardcoded color class, so the color
+     override has to target that span directly (not just the parent <a>). */
+  nav[data-app-nav] a.active span{ color:var(--bg) !important; }
+  .wave{ display:flex; align-items:center; gap:8px; color:var(--moss); }
+  .wave span{ font-size:15px; }
+  .clock{ text-align:right; line-height:1.3; }
+  .clock b{ color:var(--ink); font-size:14px; font-weight:500; }
+
+  /* hero */
+  .hero{
+    min-height:82vh;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:0 5vw; position:relative;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:500; letter-spacing:.22em;
+    color:var(--moss); text-transform:uppercase; margin-bottom:28px;
+    opacity:0.85;
+  }
+  .hero h1{
+    font-family:'Newsreader', serif; font-weight:600;
+    font-size:clamp(2.6rem, 7.5vw, 7rem);
+    line-height:0.94;
+    letter-spacing:-0.025em;
+    display:flex; flex-wrap:nowrap; align-items:baseline; justify-content:center;
+    gap:0.3em; max-width:100%;
+  }
+  .hero h1 em{ font-style:italic; font-weight:500; color:var(--moss); }
+  .letters{ display:inline-flex; flex-wrap:nowrap; flex-shrink:0; letter-spacing:0; transition:letter-spacing .5s ease; }
+  .letters:hover{ letter-spacing:0.05em; }
+  .letters .letter{ display:inline-block; transition:color .3s ease, transform .3s ease; cursor:pointer; }
+  .letter-particle{ position:fixed; width:5px; height:5px; border-radius:50%; pointer-events:none; z-index:9999; transform:translate(-50%,-50%); }
+  .letters .letter:hover{ color:var(--hc); transform:translateY(-0.08em) rotate(-3deg); }
+  /* Fixed width sized for the widest cycling string (the CJK entries render wider
+     per character than the Latin ones). Without this, the box's width tracks
+     whatever word is currently showing, and since .hero h1 is a centered flex
+     row, that made the whole row re-center on every swap - visibly shifting
+     "Aditya" left/right as the surname changed length. A constant-width box
+     keeps the row's total width (and "Aditya"'s position) fixed regardless of
+     which language is currently displayed. */
+  .lang-cycle{
+    position:relative; display:inline-block; flex-shrink:0;
+    width:5.6em; text-align:left;
+    white-space:nowrap; word-break:keep-all; overflow-wrap:normal; overflow:visible;
+    font-size:0.68em; vertical-align:baseline; line-height:1.3;
+    cursor:pointer;
+  }
+  .lang-cycle::after{
+    display:inline-block; white-space:nowrap; word-break:keep-all;
+    content:"Shankar";
+    animation:lang-cycle 24s linear infinite;
+    font-family:'Noto Sans Devanagari', 'Newsreader', serif;
+  }
+  /* content is a discrete (non-interpolable) property. If it's only declared at the
+     boundary keyframes (0/20/40/60%...), the browser is free to flip it at the
+     midpoint between those declarations - which lands mid-hold, at full opacity,
+     causing a visible snap instead of the intended invisible swap. Re-declaring
+     content at every keyframe pins it to the current word until the exact
+     opacity:0 keyframe, where the flip happens while invisible. */
+  /* Each 20%-wide language block now has FIVE points instead of four:
+     enter(0) -> fade-in-end(9) -> hold-end(13) -> fully-invisible dwell(19) -> swap(20).
+     That extra dwell keyframe holds opacity at true 0 for a beat, WITH THE OLD WORD
+     STILL SET, before content flips at the block boundary - so the swap always
+     happens after the text has visibly finished disappearing, not mid-fade. */
+  @keyframes lang-cycle{
+    0%{ content:"Shankar"; opacity:0; }
+    9%{ content:"Shankar"; opacity:1; }
+    13%{ content:"Shankar"; opacity:1; }
+    19%{ content:"Shankar"; opacity:0; }
+    20%{ content:"Шанкар"; opacity:0; }
+    29%{ content:"Шанкар"; opacity:1; }
+    33%{ content:"Шанкар"; opacity:1; }
+    39%{ content:"Шанкар"; opacity:0; }
+    40%{ content:"シャンカル"; opacity:0; }
+    49%{ content:"シャンカル"; opacity:1; }
+    53%{ content:"シャンカル"; opacity:1; }
+    59%{ content:"シャンカル"; opacity:0; }
+    60%{ content:"샹카르"; opacity:0; }
+    69%{ content:"샹카르"; opacity:1; }
+    73%{ content:"샹카르"; opacity:1; }
+    79%{ content:"샹카르"; opacity:0; }
+    80%{ content:"शंकर"; opacity:0; }
+    89%{ content:"शंकर"; opacity:1; }
+    93%{ content:"शंकर"; opacity:1; }
+    99%{ content:"शंकर"; opacity:0; }
+    100%{ content:"Shankar"; opacity:0; }
+  }
+  .tagline{
+    margin-top:32px; max-width:500px; color:var(--ink-dim);
+    font-size:15px; line-height:1.75; letter-spacing:0.01em;
+  }
+
+  /* field log ticker — signature element */
+  .fieldlog{
+    border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+    padding:13px 0; overflow:hidden; white-space:nowrap; position:relative;
+    background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015));
+    backdrop-filter:blur(12px) saturate(150%);
+    -webkit-backdrop-filter:blur(12px) saturate(150%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 0 rgba(0,0,0,0.15);
+    /* Soft fade-out edges so the ticker reads as a continuous stream */
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%);
+  }
+  .fieldlog-track{
+    display:inline-flex; gap:56px;
+  }
+  .fieldlog span{
+    font-family:'JetBrains Mono', monospace; font-size:11.5px; color:var(--ink-dim);
+    letter-spacing:0.02em;
+  }
+  .fieldlog b{ color:var(--moss); font-weight:500; }
+
+
+  .scroll-progress{
+    position:fixed; top:0; left:0; width:100%; height:3px; z-index:80;
+    background:linear-gradient(90deg, var(--rust), var(--amber), var(--moss), var(--teal));
+    transform:scaleX(0); transform-origin:left center; pointer-events:none;
+  }
+
+  /* nav pill */
+  /* sections */
+  section{ padding:120px 5vw; max-width:1100px; margin:0 auto; }
+  .section-head{ display:flex; align-items:baseline; gap:14px; margin-bottom:52px; }
+  /* section-num is metadata, not a design feature — kept small and faint */
+  .section-num{
+    font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.1em;
+    color:var(--ink-faint); font-weight:400; opacity:0.7;
+  }
+  .section-head h2{
+    font-family:'Newsreader', serif; font-size:clamp(1.9rem,3.5vw,2.6rem);
+    font-weight:600; letter-spacing:-0.02em; line-height:1;
+  }
+
+  .bg-image{
+    position:fixed; inset:0; z-index:-2; pointer-events:none;
+    background-image:url('image.jpg');
+    background-size:cover;
+    background-position:50% 50%;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  .specimen-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(280px,1fr)); gap:18px; background:transparent; border:none; perspective: 1000px; }
+  @media (max-width: 767px) {
+    [data-app-nav]{ top: max(1.5rem, env(safe-area-inset-top)); }
+  }
+  /* Safari can't do the url(#...) SVG-filter distortion in backdrop-filter
+     at all - it silently drops the whole declaration, so glass surfaces
+     render with zero blur. Swap in a plain blur+saturate there only. */
+  html.is-safari [data-app-nav] div[style*="glass-filter"]{
+    backdrop-filter: blur(14px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(14px) saturate(160%) !important;
+  }
+  html.is-safari .specimen{
+    backdrop-filter: blur(3px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(3px) saturate(180%) !important;
+  }
+  html.is-safari .tag-chip{
+    backdrop-filter: blur(3px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(3px) saturate(160%) !important;
+  }
+  html.is-safari .photo-cta{
+    backdrop-filter: blur(12px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+  }
+  html.is-safari .photo-panel.expanded{
+    backdrop-filter: blur(12px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+  }
+  html.is-safari .photo-card{
+    backdrop-filter: blur(10px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(10px) saturate(160%) !important;
+  }
+  html.is-safari .photo-subnav-inner{
+    backdrop-filter: blur(12px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+  }
+  @media (min-width: 768px) {
+    .specimen-grid.rail-mode {
+      display: flex;
+      flex-wrap: nowrap;
+      width: max-content;
+      gap: 32px;
+      padding-right: 12vw;
+    }
+    .specimen-grid.rail-mode .specimen {
+      width: 420px;
+      flex-shrink: 0;
+    }
+  }
+  .specimen{
+    display:block; text-decoration:none; color:inherit; position:relative;
+    --sp-blur: 3px;
+    --sp-sat: 180%;
+    transform-style: preserve-3d;
+    background: rgba(0,0,0,0.22);
+    backdrop-filter:url(#card-glass-distortion) blur(var(--sp-blur)) saturate(var(--sp-sat));
+    -webkit-backdrop-filter:url(#card-glass-distortion) blur(var(--sp-blur)) saturate(var(--sp-sat));
+    border:1px solid rgba(255,255,255,0.13);
+    border-radius:20px;
+    box-shadow:0 4px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.10);
+    padding:36px 32px 32px; transition:.3s cubic-bezier(.2,.8,.2,1); cursor:pointer;
+    overflow:hidden;
+  }
+  .specimen > *{ position:relative; z-index:2; }
+  .specimen:hover{
+    background:rgba(0,0,0,0.16);
+    border-color:rgba(138,154,91,0.5);
+    transform:translateY(-5px);
+    box-shadow:0 20px 48px rgba(0,0,0,0.4), 0 0 0 1px rgba(138,154,91,0.4), inset 0 1px 0 rgba(255,255,255,0.18);
+  }
+  .specimen:focus-visible{
+    outline: 2px solid var(--moss); outline-offset: 3px;
+  }
+  .specimen .arrow{
+    position:absolute; top:24px; right:24px; opacity:0; transform:translate(-5px,5px);
+    transition:.3s ease; color:var(--moss); font-size:16px;
+  }
+  .specimen:hover .arrow{ opacity:1; transform:translate(0,0); }
+  /* tag acts as category metadata — readable but not loud */
+  .specimen .tag{
+    font-family:'JetBrains Mono', monospace; font-size:10px; font-weight:500;
+    color:var(--ink-dim); letter-spacing:.1em; text-transform:uppercase;
+    margin-bottom:16px; display:block; opacity:0.75;
+  }
+  .specimen h3{ font-family:'Newsreader', serif; font-size:1.45rem; font-weight:500; margin-bottom:12px; line-height:1.2; letter-spacing:-0.01em; }
+  .specimen p{ color:var(--ink-dim); font-size:13.5px; line-height:1.65; }
+
+  .about-bio{
+    font-family:'Newsreader', serif; font-size:1.18rem; line-height:1.72;
+    color:var(--ink); max-width:660px; margin-bottom:28px;
+    letter-spacing:0.005em;
+  }
+  .about-tags{
+    display:flex; flex-wrap:wrap; gap:8px; margin-top:28px; margin-bottom:44px; clear:both; position:relative; z-index:1;
+  }
+  .tag-chip{
+    font-family:'JetBrains Mono', monospace; font-size:10.5px; letter-spacing:.07em;
+    text-transform:uppercase; color:var(--ink-dim);
+    border-radius:999px; padding:7px 15px;
+    background:rgba(0,0,0,0.3);
+    backdrop-filter:url(#card-glass-distortion) blur(3px) saturate(160%);
+    -webkit-backdrop-filter:url(#card-glass-distortion) blur(3px) saturate(160%);
+    border:1px solid rgba(255,255,255,0.10);
+    box-shadow:rgba(255,255,255,0.06) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.12) 0px 2px 8px;
+    transition:.2s ease;
+  }
+  .tag-chip:hover{
+    box-shadow:rgba(255,255,255,0.12) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.18) 0px 6px 20px;
+    transform:translateY(-2px); color:var(--ink); border-color:rgba(138,154,91,0.35);
+  }
+  .tag-chip:focus-visible{ outline:2px solid var(--moss); outline-offset:3px; }
+  .photo-cta{
+    display:inline-flex; align-items:center; gap:10px;
+    text-decoration:none; color:var(--ink-dim); font-size:12.5px; font-weight:500;
+    letter-spacing:0.03em;
+    padding:9px 18px 9px 16px; border-radius:999px;
+    background:rgba(0,0,0,0.25);
+    backdrop-filter:url(#glass-filter-_r_12b_) saturate(1);
+    -webkit-backdrop-filter:url(#glass-filter-_r_12b_) saturate(1);
+    border:1px solid rgba(255,255,255,0.10);
+    box-shadow:rgba(255,255,255,0.08) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.12) 0px 4px 16px;
+    transition:.22s ease;
+  }
+  .photo-cta:hover{
+    box-shadow:rgba(255,255,255,0.13) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.18) 0px 6px 20px;
+    transform:translateY(-2px); color:var(--ink); border-color:rgba(138,154,91,0.3);
+  }
+  .photo-cta:focus-visible{ outline:2px solid var(--moss); outline-offset:3px; }
+  .photo-cta-arrow{ transition:.22s ease; }
+  .photo-cta:hover .photo-cta-arrow{ transform:translateX(4px); }
+  /* Flip-animated expand panel for the photo CTA. Kept in normal flow (never
+     display:none) at max-height:0/opacity:0 so Flip.getState() always has a
+     real box to measure before the class toggle - Flip can't smooth a jump
+     from/to a display:none element since that has no layout box at all. */
+  .photo-panel{
+    max-height:0; opacity:0; overflow:hidden;
+    padding:0 20px; border-radius:14px;
+    background:rgba(0,0,0,0.2); border:1px solid transparent;
+    color:var(--ink-dim); font-size:14px; line-height:1.6;
+    transition:opacity .3s ease, border-color .3s ease, background .3s ease;
+  }
+  .photo-panel.expanded{
+    margin-top:20px; max-height:900px; opacity:1; padding:20px;
+    border-width:0.5px; border-color:rgba(255,255,255,0.08);
+    background:rgba(0,0,0,0.25);
+    backdrop-filter:url(#glass-filter-photopanel) saturate(1);
+    -webkit-backdrop-filter:url(#glass-filter-photopanel) saturate(1);
+  }
+  .photo-grid{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+    gap:12px; margin-top:16px;
+  }
+  .photo-card{
+    aspect-ratio:4/5; border-radius:10px; overflow:hidden; position:relative;
+    background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1);
+    backdrop-filter:url(#glass-filter-photopanel) saturate(1);
+    -webkit-backdrop-filter:url(#glass-filter-photopanel) saturate(1);
+    transition:transform .3s ease, opacity .3s ease;
+  }
+  .photo-card:hover{ transform:translateY(-3px); }
+  .photo-card img{ width:100%; height:100%; object-fit:cover; display:block; opacity:.85; transition:opacity .3s ease; }
+  .photo-card:hover img{ opacity:1; }
+  .photo-card .photo-tag{
+    position:absolute; left:8px; bottom:8px; font-family:'JetBrains Mono', monospace;
+    font-size:9.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--ink);
+    background:rgba(0,0,0,0.45); padding:3px 8px; border-radius:999px;
+    backdrop-filter:blur(4px);
+  }
+  .photo-card.hidden-cat{ display:none; }
+  .photo-card{ cursor:zoom-in; }
+
+  .photo-lightbox{
+    position:fixed; inset:0; z-index:60; display:flex; align-items:center; justify-content:center;
+    padding:5vh 5vw; background:rgba(10,9,7,0.88);
+    opacity:0; pointer-events:none; transition:opacity .3s ease;
+  }
+  .photo-lightbox.visible{ opacity:1; pointer-events:auto; }
+  .photo-lightbox img{
+    max-width:100%; max-height:100%; border-radius:8px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.5);
+  }
+  .photo-lightbox-close{
+    position:absolute; top:24px; right:28px; width:38px; height:38px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.12); color:var(--ink-dim);
+    font-size:18px; line-height:1; transition:.2s ease;
+  }
+  .photo-lightbox-close:hover{ background:rgba(0,0,0,0.55); color:var(--ink); border-color:rgba(255,255,255,0.25); }
+  .photo-lightbox-close:focus-visible{ outline:2px solid var(--moss); outline-offset:3px; }
+
+  /* Secondary glass bar: same pill/blur treatment as the main nav, but scoped
+     to photography categories. Sits directly under the main nav and only
+     shows once the photography section scrolls into view. */
+  .photo-subnav{
+    position:fixed; top:78px; left:0; right:0; z-index:24;
+    display:flex; justify-content:center; padding:0 16px;
+    opacity:0; transform:translateY(-8px); pointer-events:none;
+    transition:opacity .35s ease, transform .35s ease;
+  }
+  .photo-subnav.visible{ opacity:1; transform:translateY(0); pointer-events:auto; }
+  .photo-subnav-inner{
+    display:flex; align-items:center; gap:2px; padding:6px; border-radius:18px;
+    background:rgba(0,0,0,0.2);
+    backdrop-filter:url(#glass-filter-_r_12b_) saturate(1);
+    -webkit-backdrop-filter:url(#glass-filter-_r_12b_) saturate(1);
+    box-shadow:rgba(255,255,255,0.1) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.1) 0px 4px 16px;
+  }
+  .photo-subnav-cat{
+    font-family:'JetBrains Mono', monospace; font-size:10.5px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--ink-dim); background:none; border:none;
+    padding:7px 14px; border-radius:14px; cursor:pointer; transition:.2s ease;
+  }
+  .photo-subnav-cat:hover{ color:var(--ink); }
+  .photo-subnav-cat.active{ color:var(--ink); background:rgba(255,255,255,0.1); }
+  .photo-subnav-cat:focus-visible{ outline:2px solid var(--moss); outline-offset:2px; }
+  .site-footer{
+    display:flex; align-items:center; gap:16px;
+    padding:48px 5vw 22vh; max-width:1100px; margin:0 auto;
+    font-family:'JetBrains Mono', monospace; font-size:11.5px; color:var(--ink-dim);
+    letter-spacing:0.04em;
+  }
+  .footer-mark{ color:var(--moss); letter-spacing:.06em; font-weight:500; }
+  .footer-line{ flex:1; height:1px; background:var(--line); transform-origin:left center; }
+  .footer-year{ opacity:.5; }
+
+  /* global focus style for keyboard navigation */
+  :focus-visible{
+    outline: 2px solid var(--moss);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+  /* custom cursor */
+  body.has-custom-cursor { cursor: none; }
+  body.has-custom-cursor a, body.has-custom-cursor .specimen, body.has-custom-cursor .letters .letter { cursor: none; }
+  .cursor-dot, .cursor-ring {
+    position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999;
+    border-radius: 50%; transform: translate(-50%, -50%);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  body.has-custom-cursor .cursor-dot, body.has-custom-cursor .cursor-ring { opacity: 1; }
+  .cursor-dot { width: 5px; height: 5px; background: #fff; mix-blend-mode: difference; }
+  .cursor-ring {
+    width: 22px; height: 22px; border: 1.5px solid rgba(255,255,255,0.85);
+    mix-blend-mode: difference;
+    box-shadow: 0 0 0 0 rgba(255,255,255,0.2);
+    transition: width 0.3s, height 0.3s, border-color 0.3s, background-color 0.3s, box-shadow 0.3s;
+  }
+  .cursor-ripple {
+    position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9998;
+    width: 10px; height: 10px; border-radius: 50%;
+    border: 1.5px solid var(--moss); transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+  }

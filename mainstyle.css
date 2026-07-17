@@ -232,10 +232,6 @@
     backdrop-filter: blur(12px) saturate(180%) !important;
     -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
   }
-  html.is-safari .photo-panel.expanded{
-    backdrop-filter: blur(12px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
-  }
   html.is-safari .photo-card{
     backdrop-filter: blur(10px) saturate(160%) !important;
     -webkit-backdrop-filter: blur(10px) saturate(160%) !important;
@@ -260,7 +256,6 @@
     -webkit-backdrop-filter: blur(3px) saturate(180%) !important;
   }
   body.low-power .photo-cta,
-  body.low-power .photo-panel.expanded,
   body.low-power .photo-subnav-inner{
     backdrop-filter: blur(10px) saturate(170%) !important;
     -webkit-backdrop-filter: blur(10px) saturate(170%) !important;
@@ -369,24 +364,6 @@
   .photo-cta:focus-visible{ outline:2px solid var(--moss); outline-offset:3px; }
   .photo-cta-arrow{ transition:.22s ease; }
   .photo-cta:hover .photo-cta-arrow{ transform:translateX(4px); }
-  /* Flip-animated expand panel for the photo CTA. Kept in normal flow (never
-     display:none) at max-height:0/opacity:0 so Flip.getState() always has a
-     real box to measure before the class toggle - Flip can't smooth a jump
-     from/to a display:none element since that has no layout box at all. */
-  .photo-panel{
-    max-height:0; opacity:0; overflow:hidden;
-    padding:0 20px; border-radius:14px;
-    background:rgba(0,0,0,0.2); border:1px solid transparent;
-    color:var(--ink-dim); font-size:14px; line-height:1.6;
-    transition:opacity .3s ease, border-color .3s ease, background .3s ease;
-  }
-  .photo-panel.expanded{
-    margin-top:20px; max-height:900px; opacity:1; padding:20px;
-    border-width:0.5px; border-color:rgba(255,255,255,0.08);
-    background:rgba(0,0,0,0.25);
-    backdrop-filter:url(#glass-filter-photopanel) saturate(1);
-    -webkit-backdrop-filter:url(#glass-filter-photopanel) saturate(1);
-  }
   .photo-grid{
     display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
     gap:12px; margin-top:16px;
@@ -429,16 +406,8 @@
   .photo-lightbox-close:hover{ background:rgba(0,0,0,0.55); color:var(--ink); border-color:rgba(255,255,255,0.25); }
   .photo-lightbox-close:focus-visible{ outline:2px solid var(--moss); outline-offset:3px; }
 
-  /* Secondary glass bar: same pill/blur treatment as the main nav, but scoped
-     to photography categories. Sits directly under the main nav and only
-     shows once the photography section scrolls into view. */
-  .photo-subnav{
-    position:fixed; top:78px; left:0; right:0; z-index:24;
-    display:flex; justify-content:center; padding:0 16px;
-    opacity:0; transform:translateY(-8px); pointer-events:none;
-    transition:opacity .35s ease, transform .35s ease;
-  }
-  .photo-subnav.visible{ opacity:1; transform:translateY(0); pointer-events:auto; }
+  /* Photo category pill + buttons: styling reused by the standalone gallery
+     page's top bar (.gallery-nav wraps these there instead of .photo-subnav). */
   .photo-subnav-inner{
     display:flex; align-items:center; gap:2px; padding:6px; border-radius:18px;
     background:rgba(0,0,0,0.2);

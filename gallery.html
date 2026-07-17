@@ -35,13 +35,9 @@
   .gallery-nav-inner{
     display:flex; align-items:center; gap:4px; padding:6px; border-radius:18px;
     background:rgba(0,0,0,0.2);
-    backdrop-filter:url(#glass-filter-_r_12b_) saturate(1);
-    -webkit-backdrop-filter:url(#glass-filter-_r_12b_) saturate(1);
+    backdrop-filter: blur(10px) saturate(160%) brightness(110%);
+    -webkit-backdrop-filter: blur(10px) saturate(160%) brightness(110%);
     box-shadow:rgba(255,255,255,0.1) 0px 0px 0px 0.5px inset, rgba(0,0,0,0.1) 0px 4px 16px;
-  }
-  html.is-safari .gallery-nav-inner, html.is-lowpower .gallery-nav-inner{
-    backdrop-filter: blur(14px) saturate(160%) !important;
-    -webkit-backdrop-filter: blur(14px) saturate(160%) !important;
   }
   .gallery-nav-back{
     font-family:'Newsreader', serif; font-size:1rem; color:var(--ink);
@@ -60,25 +56,69 @@
     font-family:'Work Sans', sans-serif; color:var(--ink-dim); font-size:14.5px; margin-bottom:12px;
   }
   .gallery-page-grid-wrap{
-    max-width:1100px; margin:0 auto; padding:0 24px 100px;
+    max-width:1100px; margin:0 auto; padding:0 24px 240px;
+  }
+  /* Override the shared .bg-image rule (mainstyle.css points it at image.jpg)
+     just for this page - index.html keeps its own background untouched. */
+  /* Nav + photo-card now use a dedicated low-separation glass filter (see SVG
+     defs below) instead of the shared mainstyle.css one, which had much
+     stronger RGB channel separation and made images look fringed/translucent. */
+  .gallery-nav-inner{
+    backdrop-filter: url(#glass-filter-gallery-dyn) saturate(160%) brightness(110%) !important;
+    -webkit-backdrop-filter: url(#glass-filter-gallery-dyn) saturate(160%) brightness(110%) !important;
+  }
+  .photo-card{
+    backdrop-filter: url(#glass-filter-gallery-dyn) saturate(160%) brightness(110%) !important;
+    -webkit-backdrop-filter: url(#glass-filter-gallery-dyn) saturate(160%) brightness(110%) !important;
+  }
+  .photo-card img{ opacity:1 !important; }
+  .photo-card:hover img{ opacity:1 !important; }
+  /* Bg-image override */
+  .bg-image{
+    background-image:url('image2.png');
+  }
+  /* Collapsible image description panel, shown only inside the lightbox.
+     Near-transparent so it sits quietly over/under the full-res photo. */
+  .photo-lightbox-desc{
+    position:absolute; left:50%; bottom:5vh; transform:translateX(-50%);
+    max-width:min(560px, 86vw);
+    background:rgba(10,9,7,0.12);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:12px; padding:6px 12px; text-align:left;
+  }
+  .photo-lightbox-desc-toggle{
+    all:unset; cursor:pointer; display:block;
+    font-family:'JetBrains Mono', monospace; font-size:10.5px; letter-spacing:.05em;
+    text-transform:uppercase; color:var(--ink-dim); padding:4px 0;
+  }
+  .photo-lightbox-desc-text{
+    font-family:'Work Sans', sans-serif; font-size:13.5px; color:var(--ink);
+    margin:2px 0 6px; max-height:200px; overflow:hidden;
+    transition:max-height .25s ease, opacity .25s ease, margin .25s ease;
+  }
+  .photo-lightbox-desc.is-collapsed .photo-lightbox-desc-text{
+    max-height:0; opacity:0; margin:0; pointer-events:none;
   }
 </style>
 </head>
 <body>
   <svg width="1" height="1" style="position:absolute; overflow:hidden;" xmlns:xlink="http://www.w3.org/1999/xlink">
     <defs>
-      <filter id="glass-filter-_r_12b_" color-interpolation-filters="sRGB" x="0%" y="0%" width="100%" height="100%">
-        <feImage x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" result="map"
-          href="data:image/svg+xml,%0A%20%20%20%20%20%20%3Csvg%20viewBox%3D%220%200%20260%2048%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%20%20%20%20%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%20%20%20%20%3ClinearGradient%20id%3D%22red-grad-_r_12b_%22%20x1%3D%22100%25%22%20y1%3D%220%25%22%20x2%3D%220%25%22%20y2%3D%220%25%22%3E%0A%20%20%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%230000%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22red%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%20%20%20%20%20%20%3ClinearGradient%20id%3D%22blue-grad-_r_12b_%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%220%25%22%20y2%3D%22100%25%22%3E%0A%20%20%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%230000%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22blue%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%20%20%20%20%3C%2Fdefs%3E%0A%20%20%20%20%20%20%20%20%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22260%22%20height%3D%2248%22%20fill%3D%22black%22%3E%3C%2Frect%3E%0A%20%20%20%20%20%20%20%20%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22260%22%20height%3D%2248%22%20rx%3D%2220%22%20fill%3D%22url(%23red-grad-_r_12b_)%22%20%2F%3E%0A%20%20%20%20%20%20%20%20%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22260%22%20height%3D%2248%22%20rx%3D%2220%22%20fill%3D%22url(%23blue-grad-_r_12b_)%22%20style%3D%22mix-blend-mode%3A%20screen%22%20%2F%3E%0A%20%20%20%20%20%20%20%20%3Crect%20x%3D%221.6800000000000002%22%20y%3D%221.6800000000000002%22%20width%3D%22256.64%22%20height%3D%2244.64%22%20rx%3D%2220%22%20fill%3D%22hsl(0%200%25%2050%25%20%2F%200.93)%22%20style%3D%22filter%3Ablur(7px)%22%20%2F%3E%0A%20%20%20%20%20%20%3C%2Fsvg%3E%0A%20%20%20%20" />
-        <feDisplacementMap in="SourceGraphic" in2="map" id="redchannel" result="dispRed" scale="-180" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap>
+      <!-- Reduced-separation, dynamically-adjustable glass filter for this page's
+           nav bar and photo cards. The slider below drives dispScaleR/G/B and
+           the blur amount via JS; RGB channel offsets are kept small (max ~10px
+           apart) compared to the original -42.5/-40/-37.5 used elsewhere. -->
+      <filter id="glass-filter-gallery-dyn" color-interpolation-filters="sRGB" x="-25%" y="-25%" width="150%" height="150%">
+        <feImage x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" result="map" href="data:image/svg+xml,%0A%20%20%20%20%20%20%3Csvg%20viewBox%3D%220%200%20260%2048%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%20%20%20%20%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%20%20%20%20%3ClinearGradient%20id%3D%22red-grad-gallery-dyn%22%20x1%3D%22100%25%22%20y1%3D%220%25%22%20x2%3D%220%25%22%20y2%3D%220%25%22%3E%0A%20%20%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%230000%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22red%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%20%20%20%20%20%20%3ClinearGradient%20id%3D%22blue-grad-gallery-dyn%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%220%25%22%20y2%3D%22100%25%22%3E%0A%20%20%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%230000%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22blue%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%20%20%20%20%3C%2Fdefs%3E%0A%20%20%20%20%20%20%20%20%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22260%22%20height%3D%2248%22%20fill%3D%22black%22%3E%3C%2Frect%3E%0A%20%20%20%20%20%20%20%20%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22260%22%20height%3D%2248%22%20rx%3D%2220%22%20fill%3D%22url(%23red-grad-gallery-dyn)%22%20%2F%3E%0A%20%20%20%20%20%20%20%20%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22260%22%20height%3D%2248%22%20rx%3D%2220%22%20fill%3D%22url(%23blue-grad-gallery-dyn)%22%20style%3D%22mix-blend-mode%3A%20screen%22%20%2F%3E%0A%20%20%20%20%20%20%20%20%3Crect%20x%3D%221.68%22%20y%3D%221.68%22%20width%3D%22256.64%22%20height%3D%2244.64%22%20rx%3D%2220%22%20fill%3D%22hsl(0%200%25%2050%25%20%2F%200.93)%22%20style%3D%22filter%3Ablur(7px)%22%20%2F%3E%0A%20%20%20%20%20%20%3C%2Fsvg%3E%0A%20%20%20%20" />
+        <feDisplacementMap in="SourceGraphic" in2="map" id="gallery-dyn-red" result="dispRed" scale="-20" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap>
         <feColorMatrix in="dispRed" type="matrix" values="1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0" result="red"></feColorMatrix>
-        <feDisplacementMap in="SourceGraphic" in2="map" id="greenchannel" result="dispGreen" scale="-170" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap>
+        <feDisplacementMap in="SourceGraphic" in2="map" id="gallery-dyn-green" result="dispGreen" scale="-16" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap>
         <feColorMatrix in="dispGreen" type="matrix" values="0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 1 0" result="green"></feColorMatrix>
-        <feDisplacementMap in="SourceGraphic" in2="map" id="bluechannel" result="dispBlue" scale="-160" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap>
+        <feDisplacementMap in="SourceGraphic" in2="map" id="gallery-dyn-blue" result="dispBlue" scale="-12" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap>
         <feColorMatrix in="dispBlue" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0" result="blue"></feColorMatrix>
         <feBlend in="red" in2="green" mode="screen" result="rg"></feBlend>
         <feBlend in="rg" in2="blue" mode="screen" result="output"></feBlend>
-        <feGaussianBlur in="output" stdDeviation="0.5"></feGaussianBlur>
+        <feGaussianBlur in="output" id="gallery-dyn-blur" stdDeviation="10"></feGaussianBlur>
       </filter>
       <filter id="glass-filter-photopanel" color-interpolation-filters="sRGB" x="0%" y="0%" width="100%" height="100%">
         <feImage x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" result="map" href="data:image/svg+xml,%0A%20%20%20%20%20%20%3Csvg%20viewBox%3D%220%200%20260%2048%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%20%20%20%20%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%20%20%20%20%3ClinearGradient%20id%3D%22red-grad-photopanel%22%20x1%3D%22100%25%22%20y1%3D%220%25%22%20x2%3D%220%25%22%20y2%3D%220%25%22%3E%0A%20%20%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%230000%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22red%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%20%20%20%20%20%20%3ClinearGradient%20id%3D%22blue-grad-photopanel%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%220%25%22%20y2%3D%22100%25%22%3E%0A%20%20%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%230000%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22blue%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%20%20%20%20%3C%2Fdefs%3E%0A%20%20%20%20%20%20%20%20%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22260%22%20height%3D%2248%22%20fill%3D%22black%22%3E%3C%2Frect%3E%0A%20%20%20%20%20%20%20%20%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22260%22%20height%3D%2248%22%20rx%3D%2220%22%20fill%3D%22url(%23red-grad-photopanel)%22%20%2F%3E%0A%20%20%20%20%20%20%20%20%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22260%22%20height%3D%2248%22%20rx%3D%2220%22%20fill%3D%22url(%23blue-grad-photopanel)%22%20style%3D%22mix-blend-mode%3A%20screen%22%20%2F%3E%0A%20%20%20%20%20%20%20%20%3Crect%20x%3D%221.68%22%20y%3D%221.68%22%20width%3D%22256.64%22%20height%3D%2244.64%22%20rx%3D%2220%22%20fill%3D%22hsl(0%200%25%2050%25%20%2F%200.93)%22%20style%3D%22filter%3Ablur(7px)%22%20%2F%3E%0A%20%20%20%20%20%20%3C%2Fsvg%3E%0A%20%20%20%20" />
@@ -100,6 +140,10 @@
 
   <canvas id="particle-bg" style="position:fixed; inset:0; z-index:-1; pointer-events:none;"></canvas>
   <div class="bg-image"></div>
+  <!-- mainscript.js's clock tick() expects this element (normally in index.html's
+       nav); without it here the script throws and every listener registered
+       after it (including the photo lightbox) never gets attached. -->
+  <div id="clock" style="display:none;"></div>
 
   <!-- Liquid-glass top bar for this page: back link + photo category filters,
        reusing the same pill/blur treatment as the main site's photo subnav. -->
@@ -124,27 +168,25 @@
 
   <div class="gallery-page-grid-wrap">
     <div class="photo-grid" id="photoGrid">
-      <div class="photo-card" data-cat="astro"><img data-full="media/astro/Night_Sky.jpeg" src="media/astro/Night_Sky.jpeg" alt="Night sky" loading="lazy"><span class="photo-tag">Astro</span></div>
-      <div class="photo-card" data-cat="astro"><img data-full="media/astro/NIGHT_SKY_WITH_METEOR_STREAK.jpeg" src="media/astro/NIGHT_SKY_WITH_METEOR_STREAK.jpeg" alt="Night sky with meteor streak" loading="lazy"><span class="photo-tag">Astro</span></div>
-      <div class="photo-card" data-cat="astro"><img data-full="media/astro/Pleaides.jpeg" src="media/astro/Pleaides.jpeg" alt="Pleiades star cluster" loading="lazy"><span class="photo-tag">Astro</span></div>
-      <div class="photo-card" data-cat="astro"><img data-full="media/astro/Ramadan_Moon.jpeg" src="media/astro/Ramadan_Moon.jpeg" alt="Ramadan moon" loading="lazy"><span class="photo-tag">Astro</span></div>
-      <div class="photo-card" data-cat="astro"><img data-full="media/astro/Sun_NonZoomed.jpeg" src="media/astro/Sun_NonZoomed.jpeg" alt="Sun, wide shot" loading="lazy"><span class="photo-tag">Astro</span></div>
-      <div class="photo-card" data-cat="astro"><img data-full="media/astro/Sun_Zoomed.jpeg" src="media/astro/Sun_Zoomed.jpeg" alt="Sun, zoomed shot" loading="lazy"><span class="photo-tag">Astro</span></div>
+      <div class="photo-card" data-cat="astro"><img data-desc="A clear night in a bortle 2 region, with minor fog." data-full="media/astro/Night_Sky.jpeg" src="media/astro/Night_Sky.jpeg" alt="Night sky" loading="lazy"><span class="photo-tag">Astro</span></div>
+      <div class="photo-card" data-cat="astro"><img data-desc="One of my BEST Astro photos I have ever taken during the Geminid Meteor Showers, You can see a greenish meteor streak in the top middle-left corner." data-full="media/astro/NIGHT_SKY_WITH_METEOR_STREAK.jpeg" src="media/astro/NIGHT_SKY_WITH_METEOR_STREAK.jpeg" alt="Night sky with meteor streak" loading="lazy"><span class="photo-tag">Astro</span></div>
+      <div class="photo-card" data-cat="astro"><img data-desc="The Pleiades, a cluster of young stars also known as the Seven Sisters." data-full="media/astro/Pleaides.jpeg" src="media/astro/Pleaides.jpeg" alt="Pleiades star cluster" loading="lazy"><span class="photo-tag">Astro</span></div>
+      <div class="photo-card" data-cat="astro"><img data-desc="A perfect crescent moon photographed during Ramadan." data-full="media/astro/Ramadan_Moon.jpeg" src="media/astro/Ramadan_Moon.jpeg" alt="Ramadan moon" loading="lazy"><span class="photo-tag">Astro</span></div>
+      <div class="photo-card" data-cat="astro"><img data-desc="A close, shot of the sun, with a sunspot visible if you look carefully." data-full="media/astro/Sun_Zoomed.jpeg" src="media/astro/Sun_Zoomed.jpeg" alt="Sun, zoomed shot" loading="lazy"><span class="photo-tag">Astro</span></div>
 
-      <div class="photo-card" data-cat="storms"><img data-full="media/storms/Anvil_Crawler.jpeg" src="media/storms/Anvil_Crawler.jpeg" alt="Anvil crawler lightning" loading="lazy"><span class="photo-tag">Storms</span></div>
-      <div class="photo-card" data-cat="storms"><img data-full="media/storms/C2G_Lightning.jpeg" src="media/storms/C2G_Lightning.jpeg" alt="Cloud-to-ground lightning" loading="lazy"><span class="photo-tag">Storms</span></div>
-      <div class="photo-card" data-cat="storms"><img data-full="media/storms/Spider_Lightning_Video.mp4" data-video="media/storms/Spider_Lightning_Video.mp4" src="media/storms/Spider_Lightning_Video_FRAMES_Stacked.jpeg" alt="Spider lightning, stacked frames (video)" loading="lazy"><span class="photo-tag">Storms · Video</span></div>
+      <div class="photo-card" data-cat="storms"><img data-desc="A cloud-to-ground lightning strike." data-full="media/storms/C2G_Lightning.jpeg" src="media/storms/C2G_Lightning.jpeg" alt="Cloud-to-ground lightning" loading="lazy"><span class="photo-tag">Storms</span></div>
+      <div class="photo-card" data-cat="storms"><img data-desc="Stacked frames of a branching &quot;spider&quot; lightning event." data-full="media/storms/Spider_Lightning_Video.mp4" data-video="media/storms/Spider_Lightning_Video.mp4" src="media/storms/Spider_Lightning_Video_FRAMES_Stacked.jpeg" alt="Spider lightning, stacked frames (video)" loading="lazy"><span class="photo-tag">Storms · Video</span></div>
 
-      <div class="photo-card" data-cat="wildlife"><img data-full="media/wildlife/BeeEaters.jpeg" src="media/wildlife/BeeEaters.jpeg" alt="Bee-eaters" loading="lazy"><span class="photo-tag">Wildlife</span></div>
-      <div class="photo-card" data-cat="wildlife"><img data-full="media/wildlife/Jack(pet%20sparrow).jpeg" src="media/wildlife/Jack(pet%20sparrow).jpeg" alt="Jack, pet sparrow" loading="lazy"><span class="photo-tag">Wildlife</span></div>
-      <div class="photo-card" data-cat="wildlife"><img data-full="media/wildlife/Spotted_Owlet.jpeg" src="media/wildlife/Spotted_Owlet.jpeg" alt="Spotted owlet" loading="lazy"><span class="photo-tag">Wildlife</span></div>
-      <div class="photo-card" data-cat="wildlife"><img data-full="media/wildlife/White_Throrated_Kingfisher.jpeg" src="media/wildlife/White_Throrated_Kingfisher.jpeg" alt="White-throated kingfisher" loading="lazy"><span class="photo-tag">Wildlife</span></div>
+      <div class="photo-card" data-cat="wildlife"><img data-desc="A pair of bee-eaters perched together." data-full="media/wildlife/BeeEaters.jpeg" src="media/wildlife/BeeEaters.jpeg" alt="Bee-eaters" loading="lazy"><span class="photo-tag">Wildlife</span></div>
+      <div class="photo-card" data-cat="wildlife"><img data-desc="Jack, my pet sparrow. (Jack Sparrow)" data-full="media/wildlife/Jack(pet%20sparrow).jpeg" src="media/wildlife/Jack(pet%20sparrow).jpeg" alt="Jack, pet sparrow" loading="lazy"><span class="photo-tag">Wildlife</span></div>
+      <div class="photo-card" data-cat="wildlife"><img data-desc="A spotted owlet perching low at dusk." data-full="media/wildlife/Spotted_Owlet.jpeg" src="media/wildlife/Spotted_Owlet.jpeg" alt="Spotted owlet" loading="lazy"><span class="photo-tag">Wildlife</span></div>
+      <div class="photo-card" data-cat="wildlife"><img data-desc="A white-throated kingfisher catching a crab." data-full="media/wildlife/White_Throrated_Kingfisher.jpeg" src="media/wildlife/White_Throrated_Kingfisher.jpeg" alt="White-throated kingfisher" loading="lazy"><span class="photo-tag">Wildlife</span></div>
 
-      <div class="photo-card" data-cat="landscape"><img data-full="media/landscape/Evening_Sky.jpeg" src="media/landscape/Evening_Sky.jpeg" alt="Evening sky" loading="lazy"><span class="photo-tag">Landscape</span></div>
-      <div class="photo-card" data-cat="landscape"><img data-full="media/landscape/Evening_Sky2.jpeg" src="media/landscape/Evening_Sky2.jpeg" alt="Evening sky, second shot" loading="lazy"><span class="photo-tag">Landscape</span></div>
+      <div class="photo-card" data-cat="landscape"><img data-desc="An evening sky in warm colors." data-full="media/landscape/Evening_Sky.jpeg" src="media/landscape/Evening_Sky.jpeg" alt="Evening sky" loading="lazy"><span class="photo-tag">Landscape</span></div>
+      <div class="photo-card" data-cat="landscape"><img data-desc="The same sky in a different orientation." data-full="media/landscape/Evening_Sky2.jpeg" src="media/landscape/Evening_Sky2.jpeg" alt="Evening sky, second shot" loading="lazy"><span class="photo-tag">Landscape</span></div>
 
-      <div class="photo-card" data-cat="food"><img data-full="media/food/Ramen.jpeg" src="media/food/Ramen.jpeg" alt="Ramen" loading="lazy"><span class="photo-tag">Food</span></div>
-      <div class="photo-card" data-cat="food"><img data-full="media/food/Tteokbokki.jpeg" src="media/food/Tteokbokki.jpeg" alt="Tteokbokki" loading="lazy"><span class="photo-tag">Food</span></div>
+      <div class="photo-card" data-cat="food"><img data-desc="A bowl of ramen." data-full="media/food/Ramen.jpeg" src="media/food/Ramen.jpeg" alt="Ramen" loading="lazy"><span class="photo-tag">Food</span></div>
+      <div class="photo-card" data-cat="food"><img data-desc="Spicy Korean tteokbokki." data-full="media/food/Tteokbokki.jpeg" src="media/food/Tteokbokki.jpeg" alt="Tteokbokki" loading="lazy"><span class="photo-tag">Food</span></div>
     </div>
   </div>
 
@@ -152,10 +194,41 @@
     <span class="photo-lightbox-close" id="photoLightboxClose">×</span>
     <img id="photoLightboxImg" src="" alt="">
     <video id="photoLightboxVideo" controls playsinline style="display:none"></video>
+    <div class="photo-lightbox-desc" id="photoLightboxDesc">
+      <button class="photo-lightbox-desc-toggle" id="photoLightboxDescToggle" type="button">Description ▾</button>
+      <p class="photo-lightbox-desc-text" id="photoLightboxDescText"></p>
+    </div>
   </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="mainscript.js"></script>
+<script>
+  // Per-image description panel inside the lightbox (hardcoded via each
+  // photo's data-desc attribute). Collapsible; starts expanded per photo.
+  (function(){
+    const photoGrid = document.getElementById('photoGrid');
+    const descBox = document.getElementById('photoLightboxDesc');
+    const descText = document.getElementById('photoLightboxDescText');
+    const descToggle = document.getElementById('photoLightboxDescToggle');
+    if (!photoGrid || !descBox || !descText || !descToggle) return;
+
+    photoGrid.addEventListener('click', (e) => {
+      const card = e.target.closest('.photo-card');
+      if (!card) return;
+      const img = card.querySelector('img');
+      const desc = img.dataset.desc || '';
+      descText.textContent = desc;
+      descBox.style.display = desc ? '' : 'none';
+      descBox.classList.remove('is-collapsed');
+      descToggle.textContent = '▾';
+    });
+
+    descToggle.addEventListener('click', () => {
+      const collapsed = descBox.classList.toggle('is-collapsed');
+      descToggle.textContent = collapsed ? '▸' : '▾';
+    });
+  })();
+</script>
 </body>
 </html>

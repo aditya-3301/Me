@@ -1,5 +1,5 @@
-// Lightweight particle-network background (dots + connecting lines + mouse-grab),
-// same look/feel as particles.js but self-contained so there's no extra library to load.
+// Canvas particle-network background: floating dots + connecting lines + a
+// mouse "grab" line, self-contained (no particles.js dependency).
 (() => {
   const canvas = document.getElementById('particle-bg');
   const ctx = canvas.getContext('2d');
@@ -136,7 +136,10 @@
   resize(true);
   step(); // draw at least one static frame even if reduced motion is on
 })();
-  function tick(){
+
+// Nav clock: renders local time/date, refreshed every 30s (cheap enough to
+// not need rAF or a tighter interval).
+function tick(){
     const d = new Date();
     let h = d.getHours(), m = d.getMinutes();
     const ampm = h >= 12 ? 'pm' : 'am';
@@ -144,18 +147,23 @@
     const time = `${h}:${m.toString().padStart(2,'0')}`;
     const date = d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
     document.getElementById('clock').innerHTML = `<b>${time}</b> ${ampm}<br/>${date}`;
-  }
-  tick(); setInterval(tick, 1000*30);
+}
+tick(); setInterval(tick, 1000*30);
+
+// Main GSAP-driven interactions IIFE: scroll animations, hero entrance, nav,
+// cards, cursor, and the name/surname particle-explosion easter eggs below.
+// Scoped separately from the particle-bg IIFE above, so LOW_POWER is
+// recomputed here rather than shared - each file section is self-contained.
 (function(){
   if (typeof gsap === 'undefined') return;
-  gsap.registerPlugin(ScrollTrigger, MotionPathPlugin);
+  gsap.registerPlugin(ScrollTrigger);
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const LOW_POWER = (navigator.deviceMemory && navigator.deviceMemory <= 4)
     || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)
     || window.matchMedia('(pointer: coarse)').matches;
   if (LOW_POWER) document.body.classList.add('low-power');
 
-  /* 1. Smooth scroll base (Lenis + GSAP ticker) */
+  /* Smooth scroll base (Lenis + GSAP ticker) */
   let lenis;
   if (!reduceMotion && typeof Lenis !== 'undefined'){
     lenis = new Lenis({ duration: 1.05, smoothWheel: true });
@@ -169,7 +177,7 @@
     });
   }
 
-  /* 14. SplitText Helper (Feature 4) */
+  /* Wraps text into per-word spans so tagline/specimen copy can animate word-by-word */
   function wrapWords(selector) {
     document.querySelectorAll(selector).forEach(el => {
       const text = el.innerText;
@@ -190,7 +198,7 @@
   }
   wrapWords('.tagline, .specimen p');
 
-  /* 2. Hero entrance: letters stagger, then eyebrow/tagline */
+  /* Hero entrance: letters stagger in, then eyebrow/tagline follow */
   const tl = gsap.timeline({ defaults:{ ease:'power3.out' } });
   tl.set('.letters .letter, .lang-cycle, .eyebrow, .tagline .word', { opacity:0 })
     .set('.letters .letter', { y:24 })
@@ -201,7 +209,7 @@
     .to('.eyebrow', { opacity:1, y:0, duration:.5 }, 0)
     .to('.tagline .word', { opacity:1, y:0, rotationX: 0, duration:.6, stagger:0.02 }, 0.55);
 
-  /* 7. Pinned hero moment: eyebrow + tagline crossfade out while pinned */
+  /* Pinned hero moment: eyebrow + tagline crossfade out while pinned */
   /* CRITICAL: This must be declared before elements below it so pinSpacing is calculated correctly */
   let heroPin;
   if (!reduceMotion){
@@ -213,7 +221,7 @@
       }
     });
 
-    // 15. Scroll-Scrubbed Name Morph (Feature 5)
+    // Scrubs the hero name out as the pin releases
     ScrollTrigger.create({
       trigger: '.hero',
       start: () => heroPin.end,
@@ -224,7 +232,7 @@
     });
   }
 
-  /* 9. Liquid Nav Morph on Scroll */
+  /* Nav pill morphs (blur/padding/opacity) as the page scrolls past the hero */
   gsap.to(':root', {
     '--nav-blur': '32px',
     '--nav-sat': '220%',
@@ -254,16 +262,12 @@
     });
   });
 
-  /* 16. Background parallax: subtle vertical pan on the fixed backdrop image,
-     tied to overall scroll position. background-size:cover means the image
-     always overflows the viewport in at least one axis, so a modest pan never
-     reveals empty edges. Replaces an earlier per-section parallax attempt that
-     fought with the projects rail pin and got removed. */
-  gsap.to('.bg-image', {
-    backgroundPositionY: '65%',
-    ease: 'none',
-    scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 0.6 }
-  });
+  // NOTE: background parallax + scroll-progress bar (both scrub against
+  // 'bottom bottom') are created further down, AFTER initProjectsRail() runs -
+  // see the comment near that function. Creating them here, before the
+  // projects rail's pinned height exists, would measure the shorter
+  // pre-rail document height and cap them out around the end of Projects
+  // instead of tracking all the way to the real page bottom.
 
   /* Footer line: draws in from the left instead of just appearing, once the
      footer scrolls into view. transform-origin:left is set in the CSS above. */
@@ -274,9 +278,8 @@
     onEnterBack: () => gsap.to('.footer-line', { scaleX: 1, duration: 1, ease: 'power3.out', overwrite:'auto' })
   });
 
-  /* 18. ScrollTrigger-Driven Theme Intensity (Feature 8) — removed, was glow-only */
 
-  /* 4. Section reveals: fade + rise, staggered + Text Scramble */
+  /* Section headings: fade/rise in on scroll, with a text-scramble reveal */
   const scrambleChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*';
   
   document.querySelectorAll('.section-head').forEach(head=>{
@@ -365,7 +368,7 @@
     }
 
     gsap.utils.toArray('.specimen').forEach((card, i)=>{
-      // 8. Card Reveals (Modified for Feature 4)
+      // Project card reveal (fade + rise + word stagger) on scroll
       // NOTE: this used to be a gsap.timeline().from(...) driven purely by
       // toggleActions on a containerAnimation-based ScrollTrigger. GSAP silently
       // fails to render opacity/y for that exact combo (timeline + .from()'s
@@ -400,7 +403,7 @@
 
       
 
-      // 10. Magnetic Card Tilt & CSS Cursor Follow (runs regardless of breakpoint)
+      // Magnetic tilt + CSS cursor-follow spotlight on each card (desktop and mobile)
       const xTo = gsap.quickTo(card, "rotationY", {duration: 0.4, ease: "power3"}),
             yTo = gsap.quickTo(card, "rotationX", {duration: 0.4, ease: "power3"});
       
@@ -433,13 +436,7 @@
   });
   } // end initProjectsRail()
 
-  /* 20. Scroll progress bar - thin gradient line synced 1:1 to page scroll */
-  gsap.to('.scroll-progress', {
-    scaleX: 1, ease: 'none',
-    scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 0.3 }
-  });
-
-  /* 21. Magnetic nav links - subtle pull toward the cursor, same quickTo pattern as the cards */
+  /* Nav links pull subtly toward the cursor - same quickTo pattern as the project cards */
   if (!isTouchDevice() && !reduceMotion) {
     document.querySelectorAll('nav[data-app-nav] a').forEach(link => {
       const lx = gsap.quickTo(link, "x", { duration: 0.3, ease: "power3" }),
@@ -452,7 +449,7 @@
       link.addEventListener('mouseleave', () => { lx(0); ly(0); });
     });
   }
-  /* 23. Flip-powered expand for the photo CTA placeholder panel. Flip.min.js
+  /* Flip-powered expand for the photo CTA placeholder panel. Flip.min.js
      is already loaded elsewhere on the page and was unused until now.
      Flip.getState() is called BEFORE the class toggle (while the panel still
      has its old max-height/opacity), so Flip can smooth the jump to the new
@@ -468,7 +465,7 @@
     });
   }
 
-  /* 24. Photo category subnav: filters the grid, and only shows once the
+  /* Photo category subnav: filters the grid, and only shows once the
      photo panel area is in view (fades in/out with ScrollTrigger, same glass
      bar sitting under the main nav). */
   const photoSubnav = document.getElementById('photoSubnav');
@@ -491,7 +488,7 @@
     });
   }
 
-  /* 25. Lightbox: click a photo card to open its full-res version. */
+  /* Lightbox: click a photo card to open its full-res version. */
   const lightbox = document.getElementById('photoLightbox');
   const lightboxImg = document.getElementById('photoLightboxImg');
   const lightboxClose = document.getElementById('photoLightboxClose');
@@ -512,7 +509,7 @@
 
   function isTouchDevice(){ return window.matchMedia('(pointer: coarse)').matches; }
 
-  /* 22. Magnetic hover on the photo CTA + skill tags - same quickTo pattern as
+  /* Magnetic hover on the photo CTA + skill tags - same quickTo pattern as
      the nav links above, just a gentler pull (0.25 vs 0.35) since these are
      smaller targets. Separate element loop/closures, so it can't interfere
      with the nav's own magnetic effect. */
@@ -529,7 +526,7 @@
     });
   }
 
-  /* 6. Top nav scrollspy indicator */
+  /* Top nav scrollspy indicator: highlights the active section link */
   const navLinks = { projects: document.querySelector('[data-nav="projects"]'), experience: document.querySelector('[data-nav="experience"]') };
   const indicator = document.querySelector('.nav-indicator');
   let activeNavLink = null;
@@ -563,11 +560,12 @@
   // scrolling down then back up left the pill parked at a stale x/width, visibly
   // misaligned/overlapping the wrong link - exactly the reported glitch.
   // Projects: highlight when its top crosses 40% down the viewport (unchanged).
-  // Experience: only highlight once its top reaches 15% — prevents the "About Me"
-  // pill activating while the user is still reading the Projects rail.
+  // Experience: only highlight once its BOTTOM is nearing the viewport (60%) -
+  // i.e. most of the section has already scrolled past - rather than the
+  // moment its top appears, which was activating "About Me" far too early.
   const scrollspyDefs = [
-    { id: 'projects',   start: 'top 40%', end: 'bottom 40%', idx: 0 },
-    { id: 'experience', start: 'top 15%', end: 'bottom 40%', idx: 1 }
+    { id: 'projects',   start: 'top 40%',    end: 'bottom 40%', idx: 0 },
+    { id: 'experience', start: 'bottom 60%', end: 'bottom 40%', idx: 1 }
   ];
   scrollspyDefs.forEach(({ id, start, end, idx }) => {
     const section = document.getElementById(id);
@@ -588,7 +586,7 @@
     navResizeTimer = setTimeout(syncIndicatorToActive, 150);
   }, { passive: true });
   
-  // 13. Custom Cursor (Feature 3)
+  // Custom cursor: a dot that follows the pointer and grows on hoverable elements
   const isTouch = window.matchMedia('(pointer: coarse)').matches;
   if (!isTouch && !reduceMotion) {
     document.body.classList.add('has-custom-cursor');
@@ -642,7 +640,7 @@
     });
   }
 
-  // 13b. Name letters: click to shatter into particles, then reform.
+  // Name letters: click to shatter into particles, then reform.
   document.querySelectorAll('.letters .letter').forEach(letter => {
     let busy = false;
     letter.addEventListener('click', () => {
@@ -667,9 +665,10 @@
 
       gsap.set(letter, { opacity: 0 });
       bits.forEach(bit => {
-        // Physics2D drives x/y itself from velocity+angle+gravity+friction, so the
-        // path is a genuine ballistic arc (curved) rather than a straight lerp to
-        // a fixed endpoint - gravity pulls it down, friction (drag) bleeds speed.
+        // Hand-rolled ballistic arc (no plugin needed): velocity/angle decomposed
+        // into vx/vy, gravity pulls vy down each frame, friction bleeds speed off
+        // both axes - onUpdate integrates position every tick, giving a genuine
+        // curved arc rather than a straight lerp to a fixed endpoint.
         const angle = -90 + (Math.random() - 0.5) * 150; // upward-biased cone
         const velocity = 90 + Math.random() * 90;
         const gravity = 380, friction = 0.15;
@@ -677,10 +676,6 @@
         let vx = Math.cos(rad) * velocity;
         let vy = Math.sin(rad) * velocity;
         let px = 0, py = 0;
-        // Hand-rolled ballistic arc: same math Physics2DPlugin does internally
-        // (velocity/angle decomposed into vx/vy, gravity pulls vy down each
-        // frame, friction bleeds speed off both axes) - just driven from
-        // onUpdate instead of the plugin, so no external script is required.
         gsap.to(bit, {
           scale: 0,
           opacity: 0,
@@ -706,7 +701,7 @@
     });
   });
 
-  // 13c. Surname: same shatter-into-particles interaction as the first name.
+  // Surname: same shatter-into-particles interaction as the first name.
   // The cycling word is a CSS ::after with its own 24s swap timer - we don't
   // touch that animation at all, just hide the real element and mask the
   // click behind a burst of particles for a beat, then bring it back.
@@ -786,7 +781,7 @@
   /* Static glass map — fixed width/height, matching the reference bar exactly
      (no ResizeObserver, no dynamic regeneration; width is fixed, not fluid). */
 
-  /* 19. Draggable/Inertia Field Log (Feature 10) */
+  /* Draggable, inertia-scrolled, auto-looping "field log" ticker strip */
   const track = document.querySelector('.fieldlog-track');
   if (track) {
     const singleWidth = track.scrollWidth + 48; // add the 48px gap
@@ -847,9 +842,27 @@
   //    correct from the start - and crucially, refresh() is never called again
   //    afterward, which is what was silently freezing their opacity/y tweens at 0.
   ScrollTrigger.refresh();
-  if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(initProjectsRail);
-  } else {
-    window.addEventListener('load', initProjectsRail);
+
+  // Background parallax + scroll-progress bar: both track the full document
+  // height ('bottom bottom'), so they have to be created only after the
+  // projects rail's pinned scroll height is in place - otherwise they measure
+  // the shorter pre-rail document and cap out around the end of Projects
+  // instead of the real page bottom.
+  function createFullPageScrollTriggers(){
+    gsap.to('.bg-image', {
+      backgroundPositionY: '65%',
+      ease: 'none',
+      scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 0.6 }
+    });
+    gsap.to('.scroll-progress', {
+      scaleX: 1, ease: 'none',
+      scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 0.3 }
+    });
   }
-})();
+
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => { initProjectsRail(); createFullPageScrollTriggers(); });
+  } else {
+    window.addEventListener('load', () => { initProjectsRail(); createFullPageScrollTriggers(); });
+  }
+})(); 

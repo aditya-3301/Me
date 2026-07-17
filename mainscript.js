@@ -345,6 +345,7 @@ tick(); setInterval(tick, 1000*30);
   }, (context) => {
     let { desktop } = context.conditions;
     const grid = document.querySelector('.specimen-grid');
+    if (!grid) return;
     let railTween;
     
     if (desktop) {
@@ -449,25 +450,8 @@ tick(); setInterval(tick, 1000*30);
       link.addEventListener('mouseleave', () => { lx(0); ly(0); });
     });
   }
-  /* Flip-powered expand for the photo CTA placeholder panel. Flip.min.js
-     is already loaded elsewhere on the page and was unused until now.
-     Flip.getState() is called BEFORE the class toggle (while the panel still
-     has its old max-height/opacity), so Flip can smooth the jump to the new
-     size instead of an instant snap. */
-  const photoCta = document.getElementById('photoCta');
-  const photoPanel = document.getElementById('photoPanel');
-  if (photoCta && photoPanel && typeof Flip !== 'undefined') {
-    photoCta.addEventListener('click', (e) => {
-      e.preventDefault();
-      const state = Flip.getState(photoPanel);
-      photoPanel.classList.toggle('expanded');
-      Flip.from(state, { duration:0.5, ease:'power2.inOut' });
-    });
-  }
-
-  /* Photo category subnav: filters the grid, and only shows once the
-     photo panel area is in view (fades in/out with ScrollTrigger, same glass
-     bar sitting under the main nav). */
+  /* Photo category subnav: filters the grid (used on the standalone gallery
+     page's top bar; safely no-ops if these elements aren't on the page). */
   const photoSubnav = document.getElementById('photoSubnav');
   const photoGrid = document.getElementById('photoGrid');
   if (photoSubnav && photoGrid) {
@@ -482,26 +466,39 @@ tick(); setInterval(tick, 1000*30);
       });
     });
   }
-  if (photoSubnav && photoCta) {
-    photoCta.addEventListener('click', () => {
-      photoSubnav.classList.toggle('visible', photoPanel.classList.contains('expanded'));
-    });
-  }
 
-  /* Lightbox: click a photo card to open its full-res version. */
+  /* Lightbox: click a photo card to open its full-res version (or play its
+     video, for the one storms card backed by an actual .mp4 clip). */
   const lightbox = document.getElementById('photoLightbox');
   const lightboxImg = document.getElementById('photoLightboxImg');
+  const lightboxVideo = document.getElementById('photoLightboxVideo');
   const lightboxClose = document.getElementById('photoLightboxClose');
   if (photoGrid && lightbox && lightboxImg) {
     photoGrid.addEventListener('click', (e) => {
       const card = e.target.closest('.photo-card');
       if (!card) return;
       const img = card.querySelector('img');
-      lightboxImg.src = img.dataset.full || img.src;
-      lightboxImg.alt = img.alt;
+      if (img.dataset.video) {
+        lightboxImg.style.display = 'none';
+        lightboxVideo.style.display = '';
+        lightboxVideo.src = img.dataset.video;
+        lightboxVideo.play();
+      } else {
+        lightboxVideo.pause();
+        lightboxVideo.style.display = 'none';
+        lightboxVideo.src = '';
+        lightboxImg.style.display = '';
+        lightboxImg.src = img.dataset.full || img.src;
+        lightboxImg.alt = img.alt;
+      }
       lightbox.classList.add('visible');
     });
-    const closeLightbox = () => { lightbox.classList.remove('visible'); lightboxImg.src = ''; };
+    const closeLightbox = () => {
+      lightbox.classList.remove('visible');
+      lightboxImg.src = '';
+      lightboxVideo.pause();
+      lightboxVideo.src = '';
+    };
     lightboxClose.addEventListener('click', closeLightbox);
     lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeLightbox(); });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLightbox(); });
@@ -865,4 +862,4 @@ tick(); setInterval(tick, 1000*30);
   } else {
     window.addEventListener('load', () => { initProjectsRail(); createFullPageScrollTriggers(); });
   }
-})(); 
+})();

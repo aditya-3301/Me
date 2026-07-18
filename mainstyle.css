@@ -554,16 +554,11 @@
                 0 0 22px rgba(138,154,91,0.25);
   }
 
-  /* -- Photo grid: focus the hovered card, soften the rest.
-        Scoped to fine pointers so touch scrolling never triggers it. -- */
+  /* -- Photo grid: simple hover lift only -- */
   .photo-card{
-    transition: transform .3s ease, opacity .3s ease,
-                filter .35s ease, box-shadow .3s ease;
+    transition: transform .3s ease, box-shadow .3s ease;
   }
   @media (hover:hover) and (pointer:fine){
-    .photo-grid:hover .photo-card:not(:hover):not(.hidden-cat){
-      filter: blur(1.5px) brightness(.75) saturate(.85);
-    }
     .photo-card:hover{
       transform: translateY(-4px) scale(1.02); z-index:2;
       box-shadow: 0 14px 34px rgba(0,0,0,0.45), 0 0 0 1px rgba(138,154,91,0.35);

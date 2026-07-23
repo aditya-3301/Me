@@ -13,9 +13,30 @@
     const ua = navigator.userAgent;
     const isSafari = /^((?!chrome|android|crios|fxios|edgios).)*safari/i.test(ua);
     if (isSafari) document.documentElement.classList.add('is-safari');
+    // Arriving back from gallery.html's dolly transition? Flag it before
+    // paint so the CSS below can hold the portal covering the screen -
+    // mirrors gallery.html's own pt-arriving check, reversed.
+    if (sessionStorage.getItem('pt-arrive-home') === '1') {
+      sessionStorage.removeItem('pt-arrive-home');
+      document.documentElement.classList.add('pt-arriving-home');
+    }
   })();
 </script>
 <title>Aditya Shankar</title>
+<style>
+  /* Holds the portal fully covering the screen from first paint until
+     mainscript.js's arrival timeline eases it away - avoids a bare-page
+     flash before JS runs. Mirrors gallery.html's pt-arriving rule. */
+  html.pt-arriving-home #dollyPortalHome{ display:flex; opacity:1; }
+  html.pt-arriving-home nav[data-app-nav],
+  html.pt-arriving-home header,
+  html.pt-arriving-home .hero,
+  html.pt-arriving-home .fieldlog,
+  html.pt-arriving-home #projects,
+  html.pt-arriving-home #experience,
+  html.pt-arriving-home footer.site-footer,
+  html.pt-arriving-home .bg-image{ opacity:0; }
+</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdnjs.cloudflare.com">
@@ -25,6 +46,7 @@
 <link rel="stylesheet" href="mainstyle.css">
 </head>
 <body>
+  <div class="dolly-portal" id="dollyPortalHome"><span class="dolly-portal-label">Aditya Shankar</span></div>
   <svg width="1" height="1" style="position:absolute; overflow:hidden;" xmlns:xlink="http://www.w3.org/1999/xlink">
     <defs>
       <filter id="nav-glass-distortion" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">

@@ -1000,6 +1000,143 @@ tick(); setInterval(tick, 1000*30);
 })();
 
 /* ------------------------------------------------------------------------
+   Dolly-zoom page transition, reverse leg: gallery.html "← Aditya" ->
+   index.html. Same push-through-the-screen concept as the forward shot
+   above, just aimed at the gallery's own on-screen elements, landing on
+   index.html (see the matching arrival block further down, gated on
+   pt-arriving-home).
+   ------------------------------------------------------------------------ */
+(() => {
+  const back = document.querySelector('.gallery-nav-back');
+  if (!back || typeof gsap === 'undefined') return;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let prefetched = false;
+  function prefetchHome(){
+    if (prefetched) return; prefetched = true;
+    const l = document.createElement('link');
+    l.rel = 'prefetch'; l.href = back.getAttribute('href'); l.as = 'document';
+    document.head.appendChild(l);
+  }
+  back.addEventListener('mouseenter', prefetchHome, { once: true });
+  back.addEventListener('touchstart', prefetchHome, { once: true, passive: true });
+  back.addEventListener('focus', prefetchHome, { once: true });
+
+  const portal = document.getElementById('dollyPortal');
+  if (portal) portal.querySelector('.dolly-portal-label').textContent = 'Aditya Shankar';
+
+  const DOLLY_SELECTORS_BACK = '.gallery-nav, .gallery-page-head, .photo-grid, .bg-image';
+
+  back.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (document.documentElement.classList.contains('dolly-active')) return;
+    const href = back.getAttribute('href');
+    prefetchHome();
+
+    if (reduceMotion) {
+      sessionStorage.setItem('pt-arrive-home', '1');
+      window.location.href = href;
+      return;
+    }
+
+    document.documentElement.classList.add('dolly-active');
+    const vw = innerWidth, vh = innerHeight, cx = vw / 2, cy = vh / 2;
+
+    const targets = Array.from(document.querySelectorAll(DOLLY_SELECTORS_BACK)).filter(el => {
+      const r = el.getBoundingClientRect();
+      return r.bottom > 0 && r.top < vh && r.right > 0 && r.left < vw && r.width > 0 && r.height > 0;
+    });
+
+    gsap.set(targets, { filter: 'blur(0px) brightness(1)', transformOrigin: '50% 50%', transformPerspective: 1400 });
+
+    const tl = gsap.timeline({
+      defaults: { ease: 'power2.in' },
+      onComplete: () => {
+        sessionStorage.setItem('pt-arrive-home', '1');
+        window.location.href = href;
+      }
+    });
+
+    targets.forEach(el => {
+      const r = el.getBoundingClientRect();
+      const dx = (r.left + r.width / 2 - cx) / cx;
+      const dy = (r.top + r.height / 2 - cy) / cy;
+      const isBack = el.contains(back) || el === back;
+      tl.to(el, {
+        z: isBack ? 60 : 340 + Math.random() * 90,
+        x: `+=${dx * 120}`,
+        y: `+=${dy * 120}`,
+        rotationX: dy * -5,
+        rotationY: dx * 5,
+        scale: isBack ? 1.06 : 1.2,
+        filter: 'blur(9px) brightness(0.5)',
+        duration: 0.85,
+      }, 0);
+    });
+
+    tl.to(back, { z: 140, scale: 1.15, filter: 'blur(4px) brightness(0.85)', transformPerspective: 1400, duration: 0.55 }, 0.15);
+
+    if (portal) {
+      tl.set(portal, { display: 'flex' }, 0)
+        .fromTo(portal, { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.8, ease: 'power2.out' }, 0.2)
+        .fromTo(portal.querySelector('.dolly-portal-label'),
+          { opacity: 0, y: 16, scale: 0.94 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: 'power2.out' }, 0.5);
+    }
+  });
+
+  window.addEventListener('pageshow', (e) => {
+    if (!e.persisted) return;
+    gsap.killTweensOf(DOLLY_SELECTORS_BACK);
+    if (portal) gsap.killTweensOf(portal);
+    gsap.set(DOLLY_SELECTORS_BACK, { clearProps: 'all' });
+    if (portal) {
+      gsap.set(portal, { display: 'none', opacity: 0, scale: 0.7 });
+      gsap.set(portal.querySelector('.dolly-portal-label'), { opacity: 0 });
+    }
+    document.documentElement.classList.remove('dolly-active');
+  });
+})();
+
+/* ------------------------------------------------------------------------
+   Index-side arrival: the reverse half's landing. Mirrors the gallery-side
+   arrival block below, gated on pt-arriving-home instead of pt-arriving.
+   ------------------------------------------------------------------------ */
+(() => {
+  if (!document.documentElement.classList.contains('pt-arriving-home')) return;
+  document.documentElement.classList.remove('pt-arriving-home');
+
+  const portal = document.getElementById('dollyPortalHome');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const targets = ['nav[data-app-nav]', 'header', '.hero', '.fieldlog', '#projects', '#experience', 'footer.site-footer', '.bg-image']
+    .map(sel => document.querySelector(sel)).filter(Boolean);
+
+  if (reduceMotion || typeof gsap === 'undefined') {
+    if (portal) portal.style.display = 'none';
+    targets.forEach(el => { el.style.opacity = ''; el.style.transform = ''; el.style.filter = ''; });
+    return;
+  }
+
+  gsap.set(targets, { opacity: 0, scale: 1.07, filter: 'blur(7px)', transformOrigin: '50% 50%', transformPerspective: 1400 });
+  if (portal) gsap.set(portal, { display: 'flex', opacity: 1, scale: 1 });
+
+  gsap.timeline({ delay: 0.05, defaults: { ease: 'power2.out' } })
+    .to(targets, { opacity: 1, scale: 1, filter: 'blur(0px)', duration: 0.9, stagger: 0.06 }, 0)
+    .to(portal, {
+      opacity: 0, scale: 1.15, duration: 0.7, ease: 'power2.inOut',
+      onComplete: () => { if (portal) portal.style.display = 'none'; }
+    }, 0.15);
+
+  window.addEventListener('pageshow', (e) => {
+    if (!e.persisted) return;
+    gsap.killTweensOf(targets);
+    if (portal) gsap.killTweensOf(portal);
+    gsap.set(targets, { clearProps: 'all' });
+    if (portal) { gsap.set(portal, { clearProps: 'all' }); portal.style.display = 'none'; }
+  });
+})();
+
+/* ------------------------------------------------------------------------
    Gallery-side arrival: the reverse half of the shot above. gallery.html's
    inline head script sets html.pt-arriving synchronously (before first
    paint) whenever sessionStorage carries the pt-arrive flag, and renders
